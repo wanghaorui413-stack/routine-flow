@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102438">
+  <meta name="description" content="安排重复的学习和生活任务，每天打开即可开始。">
+  <title>循序 · 重复任务助手</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%23102438'/%3E%3Cpath d='M17 35l10 10 21-25' fill='none' stroke='%238ef0d0' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#today" aria-label="循序，返回今日任务"><span class="brand-mark">✓</span><span>循序</span></a>
+      <span class="topbar-note">重复的事，轻松做。</span>
+      <div class="header-actions"><button class="text-button" id="importButton" type="button">导入备份</button><button class="text-button" id="exportButton" type="button">导出备份</button></div>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </header>
+
+    <main>
+      <section class="dashboard" id="today" aria-labelledby="todayTitle">
+        <div class="intro">
+          <div>
+            <p class="eyebrow" id="dateLabel"></p>
+            <h1 id="todayTitle">今天要做什么</h1>
+            <p class="intro-copy">把要反复做的事设好周期，今天的清单会自动整理出来。</p>
+          </div>
+          <button class="primary-button" id="addButton" type="button"><span aria-hidden="true">＋</span> 添加重复任务</button>
+        </div>
+
+        <div class="workspace-grid">
+          <div class="main-column">
+            <div class="day-panel">
+              <div class="panel-header">
+                <div><span class="section-kicker">TODAY</span><h2>今日清单</h2></div>
+                <span class="progress-caption" id="progressCaption">0 / 0 已完成</span>
+              </div>
+              <div class="progress-track" role="progressbar" aria-label="今日完成进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar"><span id="progressFill"></span></div>
+              <div class="task-list" id="todayList" aria-live="polite"></div>
+            </div>
+            <div class="upcoming-panel">
+              <div class="panel-header compact"><div><span class="section-kicker">NEXT UP</span><h2>接下来 7 天</h2></div></div>
+              <div class="upcoming-list" id="upcomingList"></div>
+            </div>
+          </div>
+
+          <aside class="side-column" aria-label="任务概览">
+            <div class="summary-card">
+              <div class="summary-top"><span class="section-kicker">YOUR RHYTHM</span><span class="summary-icon" aria-hidden="true">↗</span></div>
+              <strong id="weeklyCount">0</strong>
+              <span>本周完成次数</span>
+              <div class="week-bars" id="weekBars" aria-label="最近七天完成次数"></div>
+            </div>
+            <div class="library-card">
+              <div class="panel-header compact"><div><span class="section-kicker">ROUTINES</span><h2>我的重复任务</h2></div><span class="count-pill" id="routineCount">0</span></div>
+              <div id="routineList" class="routine-list"></div>
+            </div>
+            <p class="privacy-note">数据保存在当前浏览器。更换设备前可导出备份。</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="taskDialog" class="task-dialog" aria-labelledby="dialogTitle">
+    <form id="taskForm" method="dialog" novalidate>
+      <div class="dialog-head"><div><span class="section-kicker">REPEAT TASK</span><h2 id="dialogTitle">添加重复任务</h2></div><button type="button" class="icon-button" id="closeDialog" aria-label="关闭">×</button></div>
+      <label class="field"><span>任务名称</span><input id="taskTitle" name="title" type="text" maxlength="60" placeholder="例如：复习英语单词" autocomplete="off" required></label>
+      <div class="form-row">
+        <label class="field"><span>分类</span><select id="taskCategory" name="category"><option value="学习">学习</option><option value="生活">生活</option><option value="健康">健康</option><option value="其他">其他</option></select></label>
+        <label class="field"><span>预计用时</span><select id="taskMinutes" name="minutes"><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15">15 分钟</option><option value="25" selected>25 分钟</option><option value="45">45 分钟</option><option value="60">60 分钟</option></select></label>
+      </div>
+      <fieldset class="frequency-field"><legend>重复周期</legend><div class="frequency-options"><label><input type="radio" name="frequency" value="daily" checked><span>每天</span></label><label><input type="radio" name="frequency" value="weekdays"><span>工作日</span></label><label><input type="radio" name="frequency" value="custom"><span>自定义</span></label></div></fieldset>
+      <fieldset class="days-field" id="daysField" hidden><legend>选择星期</legend><div class="day-options"><label><input type="checkbox" value="1"><span>一</span></label><label><input type="checkbox" value="2"><span>二</span></label><label><input type="checkbox" value="3"><span>三</span></label><label><input type="checkbox" value="4"><span>四</span></label><label><input type="checkbox" value="5"><span>五</span></label><label><input type="checkbox" value="6"><span>六</span></label><label><input type="checkbox" value="0"><span>日</span></label></div></fieldset>
+      <p class="form-error" id="formError" role="alert"></p>
+      <div class="dialog-actions"><button type="button" class="ghost-button" id="cancelDialog">取消</button><button type="submit" class="primary-button" id="saveButton">保存任务</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
+
